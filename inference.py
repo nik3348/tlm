@@ -9,7 +9,7 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained("EleutherAI/gpt-neo-125M")
     tokenizer.pad_token = tokenizer.eos_token
 
-    config = TRMConfig()
+    config = TRMConfig(vocab_size=tokenizer.vocab_size)
     print("Initializing model...")
     model = TRM(config)
 
