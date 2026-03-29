@@ -11,7 +11,7 @@ class TRMConfig:
     vocab_size: int = 32000
     hidden_size: int = 512
     intermediate_size: int = 1365
-    num_hidden_layers: int = 2
+    num_hidden_layers: int = 4
     num_attention_heads: int = 8
     num_key_value_heads: int = 8
     max_position_embeddings: int = 4096
