@@ -32,15 +32,17 @@ def load_checkpoint(model, optimizer, checkpoint_path, device):
         return 0, 0, float("inf")
 
     print(f"Loading checkpoint from {checkpoint_path}")
-    checkpoint = torch.load(checkpoint_path, map_location=device)
+    # Load to CPU first to avoid doubling GPU memory usage
+    checkpoint = torch.load(checkpoint_path, map_location="cpu")
 
     model.load_state_dict(checkpoint["model_state_dict"])
     optimizer.load_state_dict(checkpoint["optimizer_state_dict"])
 
     # Restore random states for reproducibility
-    torch.set_rng_state(checkpoint["rng_state"])
+    torch.set_rng_state(checkpoint["rng_state"].cpu())
     if checkpoint["cuda_rng_state"] is not None and torch.cuda.is_available():
-        torch.cuda.set_rng_state_all(checkpoint["cuda_rng_state"])
+        cuda_rng_state = [state.cpu() if isinstance(state, torch.Tensor) else state for state in checkpoint["cuda_rng_state"]]
+        torch.cuda.set_rng_state_all(cuda_rng_state)
 
     epoch = checkpoint["epoch"]
     step = checkpoint["step"]
@@ -99,8 +101,8 @@ def main():
     )
     val_tokenized_dataset.set_format(type="torch", columns=["input_ids"])
 
-    dataloader = DataLoader(tokenized_dataset, batch_size=64, shuffle=True)
-    val_dataloader = DataLoader(val_tokenized_dataset, batch_size=64, shuffle=False)
+    dataloader = DataLoader(tokenized_dataset, batch_size=8, shuffle=True)
+    val_dataloader = DataLoader(val_tokenized_dataset, batch_size=8, shuffle=False)
 
     print("Starting training...")
     eval_steps = 2500
