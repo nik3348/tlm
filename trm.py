@@ -1,4 +1,3 @@
-import math
 from dataclasses import dataclass
 
 import torch
@@ -125,17 +124,12 @@ class Attention(nn.Module):
             query_states, key_states, cos, sin
         )
 
-        attn_weights = torch.matmul(
-            query_states, key_states.transpose(2, 3)
-        ) / math.sqrt(self.head_dim)
-
-        if attention_mask is not None:
-            attn_weights = attn_weights + attention_mask
-
-        attn_weights = F.softmax(attn_weights, dim=-1, dtype=torch.float32).to(
-            query_states.dtype
+        attn_output = F.scaled_dot_product_attention(
+            query_states,
+            key_states,
+            value_states,
+            attn_mask=attention_mask,
         )
-        attn_output = torch.matmul(attn_weights, value_states)
 
         attn_output = attn_output.transpose(1, 2).contiguous()
         attn_output = attn_output.reshape(bsz, q_len, self.hidden_size)
@@ -252,7 +246,6 @@ class TRM(nn.Module):
     def eval_step(self, question_ids, target_ids):
         # Evaluation Loop without optimizer
         x_embed = self.input_embedding(question_ids)
-        bsz, seq_len, dim = x_embed.shape
 
         # Initialize z and y (e.g., zeros)
         z = torch.zeros_like(x_embed)
@@ -296,7 +289,6 @@ class TRM(nn.Module):
     def train_step(self, question_ids, target_ids, optimizer):
         # Deep Supervision Training Loop
         x_embed = self.input_embedding(question_ids)
-        bsz, seq_len, dim = x_embed.shape
 
         # Initialize z and y (e.g., zeros)
         z = torch.zeros_like(x_embed)

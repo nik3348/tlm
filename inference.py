@@ -23,12 +23,17 @@ def main():
     model.to(device)
 
     try:
-        model.load_state_dict(torch.load("best_model.pt", map_location=device))
-        print("Loaded best_model.pt")
+        model.load_state_dict(torch.load("checkpoints/best_model.pt", map_location=device))
+        print("Loaded checkpoints/best_model.pt")
     except FileNotFoundError:
-        print(
-            "Warning: best_model.pt not found. Running inference with an untrained model."
-        )
+        try:
+            checkpoint = torch.load("checkpoints/latest_checkpoint.pt", map_location=device)
+            model.load_state_dict(checkpoint["model_state_dict"])
+            print("Loaded checkpoints/latest_checkpoint.pt")
+        except FileNotFoundError:
+            print(
+                "Warning: No checkpoints found. Running inference with an untrained model."
+            )
 
     model.eval()
 
